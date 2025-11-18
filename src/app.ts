@@ -8,6 +8,7 @@ app.use(cors()); // Разрешаем CORS
 app.use(bodyParser());
 
 app.use(async (ctx) => {
+    console.log('Запрос:', ctx.method, ctx.path);
   if (ctx.path === '/api/newStudent' && ctx.method === 'POST') {
     console.log('Новый студент:', ctx.request.body);
 
