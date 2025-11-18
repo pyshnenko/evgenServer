@@ -17,6 +17,7 @@ app.use(async (ctx) => {
       student: ctx.request.body,
     };
   } else {
+    console.log(404)
     ctx.status = 404;
     ctx.body = { error: 'Not Found' };
   }
