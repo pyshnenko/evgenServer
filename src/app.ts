@@ -1,28 +1,49 @@
-import Koa = require('koa');
-import bodyParser = require('koa-bodyparser');
-import cors = require('koa-cors');
+import * as dotenv from 'dotenv';
+dotenv.config();
+import express, { Request, Response } from 'express';
+import { Telegraf, session } from 'telegraf';
+const app = express();
+const PORT = Number(process.env.PORT);
 
-const app = new Koa();
+const bot = new Telegraf(String(process.env.TGTOK));
 
-app.use(cors()); // Разрешаем CORS
-app.use(bodyParser());
+app.use(express.urlencoded({ extended: true }));
+// Также можно парсить JSON (на случай, если клиент отправляет JSON)
+app.use(express.json());
 
-app.use(async (ctx) => {
-    console.log('Запрос:', ctx.method, ctx.path);
-  if (ctx.path === '/api/newStudent' && ctx.method === 'POST') {
-    console.log('Новый студент:', ctx.request.body);
+bot.use(session());
 
-    ctx.body = {
-      message: 'Студент успешно добавлен!',
-      student: ctx.request.body,
-    };
-  } else {
-    console.log(404)
-    ctx.status = 404;
-    ctx.body = { error: 'Not Found' };
-  }
+bot.telegram.setMyCommands([
+  { command: '/start', description: 'Начинаем начинать' }
+])
+
+bot.start(async (ctx: any) => {
+  console.log(ctx.from.id)
+  ctx.reply('Привет!!!')
 });
 
-app.listen(3000, () => {
-  console.log('Сервер запущен на http://localhost:3000');
+bot.launch();
+// POST /api/newStudent — приём данных формы
+app.post('/api/newStudent', (req: Request, res: Response) => {
+  console.log('Получены данные:', req.body);
+
+  // Пример валидации
+  const { phone, city } = req.body;
+  if (!phone || !city) {
+    return res.status(400).json({
+      error: 'нет телефона или города',
+    });
+  }
+
+  // Здесь можно сохранить данные в БД и т.д.
+  bot.telegram.sendMessage(Number(process.env.ADMIN1),`К вам обратился пользователь\n${phone}\n${city}`)
+  bot.telegram.sendMessage(Number(process.env.ADMIN2),`К вам обратился пользователь\n${phone}\n${city}`)
+  res.status(201).json({
+    message: 'Студент успешно добавлен',
+    student: { phone, city },
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
